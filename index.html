@@ -7,6 +7,57 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, runTransaction, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyA0NVJ_WjSAF_KBM1sCYq7nlthuXgSaX0o",
+    authDomain: "portfolio-69664.firebaseapp.com",
+    databaseURL: "https://portfolio-69664-default-rtdb.firebaseio.com",
+    projectId: "portfolio-69664",
+    storageBucket: "portfolio-69664.firebasestorage.app",
+    messagingSenderId: "910995436028",
+    appId: "1:910995436028:web:849847a8cee050e0690279",
+    measurementId: "G-SKRFGXSDYL"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const counterRef = ref(db, 'portfolioViews');
+
+  // Increment count on each visit
+  runTransaction(counterRef, (current) => {
+    return (current || 0) + 1;
+  });
+
+  // Listen for real-time value and update UI
+  onValue(counterRef, (snapshot) => {
+    const count = snapshot.val() || 0;
+    const el = document.getElementById('view-count');
+    if (el) {
+      // Animate count up
+      animateCount(el, count);
+    }
+  });
+
+  function animateCount(el, target) {
+    const duration = 1200;
+    const start = performance.now();
+    const from = 0;
+    function step(now) {
+      const progress = Math.min((now - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - progress, 3);
+      el.textContent = Math.floor(from + (target - from) * ease).toLocaleString();
+      if (progress < 1) requestAnimationFrame(step);
+      else el.textContent = target.toLocaleString();
+    }
+    requestAnimationFrame(step);
+  }
+</script>
+
 <style>
   :root {
     --bg: #030810;
@@ -79,6 +130,39 @@
   .hero-stats { display: flex; gap: 40px; margin-top: 64px; padding-top: 40px; border-top: 1px solid var(--border); animation: fadeUp 0.8s 0.4s ease both; flex-wrap: wrap; }
   .stat-num { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; color: var(--cyan); }
   .stat-label { font-size: 0.68rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 2px; }
+
+  /* View counter stat — subtle separator before it */
+  .stat-views { position: relative; padding-left: 40px; }
+  .stat-views::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 4px; bottom: 4px;
+    width: 1px;
+    background: var(--border);
+  }
+  .stat-views .stat-num { color: var(--green); }
+  .stat-views .stat-label { color: var(--muted); }
+
+  /* Pulse ring on view count */
+  .stat-views .stat-num-wrap {
+    position: relative;
+    display: inline-block;
+  }
+  .stat-views .stat-num-wrap::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 4px;
+    border: 1px solid var(--green);
+    opacity: 0;
+    animation: viewPulse 3s ease infinite;
+  }
+  @keyframes viewPulse {
+    0%   { opacity: 0; transform: scale(0.9); }
+    40%  { opacity: 0.35; transform: scale(1.08); }
+    100% { opacity: 0; transform: scale(1.2); }
+  }
+
   @keyframes fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
   .scroll-hint { position: absolute; bottom: 32px; left: 48px; font-size: 0.65rem; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; display: flex; align-items: center; gap: 12px; animation: fadeUp 1s 0.6s ease both; }
   .scroll-line { width: 40px; height: 1px; background: var(--cyan); }
@@ -198,6 +282,7 @@
     #hero, .section-wrap, .pipeline-wrap { padding-left: 24px; padding-right: 24px; }
     #about .about-grid, .exp-contact-grid { grid-template-columns: 1fr; gap: 40px; }
     .hero-stats { gap: 24px; }
+    .stat-views { padding-left: 24px; }
     footer { flex-direction: column; gap: 8px; text-align: center; }
   }
 
@@ -254,11 +339,18 @@
     </div>
     <div>
       <div class="stat-num">6</div>
-      <div class="stat-label">Live Dashboard</div>
+      <div class="stat-label">Live Dashboards</div>
     </div>
     <div>
       <div class="stat-num">4+</div>
       <div class="stat-label">Certifications</div>
+    </div>
+    <!-- VIEW COUNTER -->
+    <div class="stat-views">
+      <div class="stat-num-wrap">
+        <div class="stat-num" id="view-count">—</div>
+      </div>
+      <div class="stat-label">Portfolio Views</div>
     </div>
   </div>
   <div class="scroll-hint">
@@ -310,7 +402,6 @@
         <h3>Visualisation</h3>
         <div class="tech-pill-row">
           <span class="tech-pill">Tableau</span>
-         <!-- <span class="tech-pill">Tableau Server</span> -->
           <span class="tech-pill">Tableau Public</span>
         </div>
         <h3>Languages</h3>
@@ -322,7 +413,7 @@
         <div class="tech-pill-row">
           <span class="tech-pill green">Snowflake</span>
           <span class="tech-pill green">Dataiku</span>
-		  <span class="tech-pill">Excel</span>
+          <span class="tech-pill">Excel</span>
         </div>
         <h3>Methodology</h3>
         <div class="tech-pill-row">
@@ -371,7 +462,7 @@
       <div class="pipeline-step">
         <div class="pipeline-icon">📊</div>
         <div class="pipeline-name">Visualise</div>
-        <div class="pipeline-sublabel">Tableau </div>
+        <div class="pipeline-sublabel">Tableau</div>
       </div>
       <div class="pipeline-step">
         <div class="pipeline-icon">🎯</div>
@@ -540,8 +631,8 @@
           <a href="https://public.tableau.com/app/profile/unnat3891/viz/AnalysisonSpaceMissions/Dashboard1" target="_blank" class="project-link">View on Tableau Public →</a>
         </div>
       </div>
-	  
-	  <div class="project-card reveal reveal-delay-2">
+
+      <div class="project-card reveal reveal-delay-2">
         <div class="project-header">
           <span class="project-type">Excel · Tableau · COVID-19</span>
           <div class="project-num">04</div>
@@ -557,6 +648,7 @@
           <a href="https://public.tableau.com/app/profile/unnat3891/viz/Covid19in-progress/Dashboard1" target="_blank" class="project-link">View on Tableau Public →</a>
         </div>
       </div>
+
     </div>
   </div>
 </section>
@@ -585,10 +677,10 @@
             <div class="timeline-tags">
               <span class="timeline-tag">Tableau</span>
               <span class="timeline-tag">Python</span>
-			  <span class="timeline-tag">Excel</span>
+              <span class="timeline-tag">Excel</span>
               <span class="timeline-tag">SQL</span>
               <span class="timeline-tag">Pandas</span>
-              <span class="timeline-tag">Etl</span>
+              <span class="timeline-tag">ETL</span>
             </div>
           </div>
 
@@ -609,8 +701,8 @@
               <span class="timeline-tag">Dataiku</span>
               <span class="timeline-tag">Python</span>
               <span class="timeline-tag">Snowflake SQL</span>
-			  <span class="timeline-tag">Etl</span>
-			  <span class="timeline-tag">Excel</span>
+              <span class="timeline-tag">ETL</span>
+              <span class="timeline-tag">Excel</span>
             </div>
           </div>
 
@@ -641,7 +733,7 @@
           <div class="section-label" style="margin-bottom:24px;">Education</div>
           <div class="edu-grid">
             <div class="edu-card reveal">
-              <div class="edu-degree">B.tech in Computer Engineering</div>
+              <div class="edu-degree">B.Tech in Computer Engineering</div>
               <div class="edu-school">The Northcap University, Gurugram</div>
               <div class="edu-year">July 2018</div>
             </div>
@@ -660,7 +752,7 @@
         <h2 style="font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(1.8rem,3vw,2.4rem);letter-spacing:-0.02em;margin-bottom:32px;">Let's talk<br>data.</h2>
         <div class="contact-box reveal">
           <h3>Open to Opportunities</h3>
-          <p>Looking for Data Analyst,BI or Data Engineering roles. Happy to discuss full-time positions, freelance dashboarding, or just talk data architecture over chai.</p>
+          <p>Looking for Data Analyst, BI or Data Engineering roles. Happy to discuss full-time positions, freelance dashboarding, or just talk data architecture over chai.</p>
           <a href="mailto:unnat.1995@gmail.com" class="contact-link">
             <div class="contact-link-icon">✉️</div>
             <div>
@@ -698,7 +790,7 @@
 
 <footer>
   <div>© 2026 <span>Unnat Jain</span> — Senior Data Analyst · Delhi, India</div>
-  <div>Built with Three.js · HTML · CSS</div>
+  <div>Built with Three.js · Firebase · HTML · CSS</div>
 </footer>
 
 <script>
