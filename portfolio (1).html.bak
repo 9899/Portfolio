@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Unnat Jain — Senior Data Analyst</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  :root {
+    --bg: #030810;
+    --surface: #060f1e;
+    --cyan: #00e5ff;
+    --cyan-dim: #007a8a;
+    --amber: #f59e0b;
+    --green: #22d3a0;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --border: rgba(0,229,255,0.12);
+    --glow: 0 0 30px rgba(0,229,255,0.25);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    cursor: none;
+    overflow-x: hidden;
+  }
+  #cursor {
+    position: fixed; width: 12px; height: 12px;
+    background: var(--cyan); border-radius: 50%;
+    pointer-events: none; z-index: 9999;
+    transform: translate(-50%,-50%);
+    transition: width 0.2s, height 0.2s, background 0.2s;
+    mix-blend-mode: screen;
+  }
+  #cursor-ring {
+    position: fixed; width: 36px; height: 36px;
+    border: 1.5px solid var(--cyan); border-radius: 50%;
+    pointer-events: none; z-index: 9998;
+    transform: translate(-50%,-50%);
+    transition: all 0.15s ease; opacity: 0.5;
+  }
+  body:has(a:hover) #cursor, body:has(button:hover) #cursor { width: 20px; height: 20px; background: var(--amber); }
+  body:has(a:hover) #cursor-ring, body:has(button:hover) #cursor-ring { width: 56px; height: 56px; border-color: var(--amber); opacity: 0.3; }
+  #canvas3d { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 48px;
+    background: linear-gradient(to bottom, rgba(3,8,16,0.96), transparent);
+    backdrop-filter: blur(4px);
+  }
+  .nav-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem; color: var(--cyan); letter-spacing: 0.05em; text-decoration: none; }
+  .nav-logo span { color: var(--amber); }
+  .nav-links { display: flex; gap: 32px; list-style: none; }
+  .nav-links a { color: var(--muted); font-size: 0.75rem; letter-spacing: 0.1em; text-decoration: none; text-transform: uppercase; transition: color 0.2s; }
+  .nav-links a:hover { color: var(--cyan); }
+  .nav-badge { background: rgba(0,229,255,0.1); border: 1px solid var(--border); color: var(--cyan); padding: 6px 14px; border-radius: 20px; font-size: 0.7rem; letter-spacing: 0.1em; }
+  .nav-badge::before { content: '● '; color: var(--green); }
+  section { position: relative; z-index: 1; }
+  #hero { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 0 48px; padding-top: 80px; max-width: 950px; }
+  .hero-tag { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,229,255,0.06); border: 1px solid var(--border); padding: 6px 14px; border-radius: 4px; margin-bottom: 32px; font-size: 0.7rem; color: var(--cyan); letter-spacing: 0.12em; text-transform: uppercase; animation: fadeUp 0.8s ease both; }
+  .hero-tag::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+  h1 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: clamp(3rem, 8vw, 6.5rem); line-height: 0.95; letter-spacing: -0.03em; color: var(--text); animation: fadeUp 0.8s 0.1s ease both; }
+  h1 .accent { color: var(--cyan); }
+  h1 .line2 { display: block; color: rgba(226,232,240,0.28); }
+  .hero-sub { margin-top: 28px; font-size: 0.85rem; color: var(--muted); max-width: 560px; line-height: 1.85; animation: fadeUp 0.8s 0.2s ease both; }
+  .hero-sub span { color: var(--amber); }
+  .hero-cta { display: flex; gap: 16px; margin-top: 48px; flex-wrap: wrap; animation: fadeUp 0.8s 0.3s ease both; }
+  .btn-primary { background: var(--cyan); color: var(--bg); padding: 14px 28px; border-radius: 4px; border: none; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; cursor: none; text-decoration: none; display: inline-block; transition: background 0.2s, box-shadow 0.2s, transform 0.15s; }
+  .btn-primary:hover { background: #33ecff; box-shadow: var(--glow); transform: translateY(-2px); }
+  .btn-secondary { background: transparent; color: var(--text); padding: 13px 28px; border-radius: 4px; border: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; cursor: none; text-decoration: none; display: inline-block; transition: border-color 0.2s, color 0.2s, transform 0.15s; }
+  .btn-secondary:hover { border-color: var(--cyan); color: var(--cyan); transform: translateY(-2px); }
+  .hero-stats { display: flex; gap: 40px; margin-top: 64px; padding-top: 40px; border-top: 1px solid var(--border); animation: fadeUp 0.8s 0.4s ease both; flex-wrap: wrap; }
+  .stat-num { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; color: var(--cyan); }
+  .stat-label { font-size: 0.68rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 2px; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+  .scroll-hint { position: absolute; bottom: 32px; left: 48px; font-size: 0.65rem; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; display: flex; align-items: center; gap: 12px; animation: fadeUp 1s 0.6s ease both; }
+  .scroll-line { width: 40px; height: 1px; background: var(--cyan); }
+  .section-wrap { max-width: 1100px; margin: 0 auto; padding: 100px 48px; }
+  .section-label { font-size: 0.68rem; color: var(--cyan); letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 16px; display: flex; align-items: center; gap: 12px; }
+  .section-label::before { content: ''; display: block; width: 24px; height: 1px; background: var(--cyan); }
+  .section-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: clamp(2rem, 4vw, 3rem); letter-spacing: -0.02em; margin-bottom: 48px; }
+
+  /* ABOUT */
+  #about .about-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 64px; align-items: start; }
+  .about-text p { font-size: 0.85rem; color: var(--muted); line-height: 1.9; margin-bottom: 16px; }
+  .about-text p strong { color: var(--text); font-weight: 500; }
+  .about-text .highlight { color: var(--cyan); border-left: 2px solid var(--cyan); padding-left: 16px; margin: 24px 0; font-size: 0.88rem; line-height: 1.7; }
+  .tech-stack { display: flex; flex-direction: column; gap: 4px; }
+  .tech-stack h3 { font-family: 'Syne', sans-serif; font-size: 0.82rem; font-weight: 700; margin-bottom: 8px; margin-top: 16px; color: var(--text); }
+  .tech-pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+  .tech-pill { background: rgba(0,229,255,0.07); border: 1px solid rgba(0,229,255,0.15); color: var(--cyan); font-size: 0.68rem; letter-spacing: 0.08em; padding: 5px 12px; border-radius: 2px; text-transform: uppercase; transition: background 0.2s, border-color 0.2s; }
+  .tech-pill:hover { background: rgba(0,229,255,0.15); border-color: var(--cyan); }
+  .tech-pill.amber { color: var(--amber); background: rgba(245,158,11,0.07); border-color: rgba(245,158,11,0.2); }
+  .tech-pill.green { color: var(--green); background: rgba(34,211,160,0.07); border-color: rgba(34,211,160,0.2); }
+
+  /* CERTS */
+  .cert-section-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.9rem; margin-bottom: 12px; margin-top: 32px; color: var(--text); }
+  .cert-row { display: flex; flex-direction: column; gap: 10px; }
+  .cert-item { display: flex; align-items: center; gap: 12px; background: rgba(245,158,11,0.05); border: 1px solid rgba(245,158,11,0.15); border-radius: 4px; padding: 10px 14px; transition: border-color 0.2s, background 0.2s; }
+  .cert-item:hover { background: rgba(245,158,11,0.09); border-color: rgba(245,158,11,0.35); }
+  .cert-icon { font-size: 1rem; flex-shrink: 0; }
+  .cert-name { font-size: 0.72rem; color: var(--amber); }
+  .cert-org { font-size: 0.62rem; color: var(--muted); margin-top: 1px; }
+
+  /* PIPELINE */
+  #pipeline { padding: 80px 0; overflow: hidden; }
+  .pipeline-wrap { max-width: 1100px; margin: 0 auto; padding: 0 48px; }
+  .pipeline-flow { display: flex; align-items: center; gap: 0; margin-top: 48px; overflow-x: auto; padding-bottom: 16px; }
+  .pipeline-step { display: flex; flex-direction: column; align-items: center; min-width: 120px; position: relative; }
+  .pipeline-step:not(:last-child)::after { content: ''; position: absolute; top: 28px; left: calc(50% + 36px); width: calc(100% - 72px); height: 2px; background: linear-gradient(90deg, var(--cyan-dim), transparent); animation: flowLine 3s ease infinite; }
+  @keyframes flowLine { 0%{background:linear-gradient(90deg,var(--cyan-dim),transparent)} 50%{background:linear-gradient(90deg,var(--cyan),var(--cyan-dim))} 100%{background:linear-gradient(90deg,var(--cyan-dim),transparent)} }
+  .pipeline-icon { width: 56px; height: 56px; border-radius: 8px; background: rgba(0,229,255,0.08); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 10px; transition: border-color 0.3s, background 0.3s; }
+  .pipeline-step:hover .pipeline-icon { border-color: var(--cyan); background: rgba(0,229,255,0.14); }
+  .pipeline-name { font-size: 0.65rem; text-align: center; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+  .pipeline-sublabel { font-size: 0.58rem; color: var(--cyan-dim); text-align: center; margin-top: 2px; }
+
+  /* SKILLS */
+  #skills { background: linear-gradient(135deg, rgba(6,15,30,0.8), rgba(3,8,16,0.9)); }
+  .skills-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+  .skill-card { background: rgba(6,15,30,0.8); border: 1px solid var(--border); border-radius: 8px; padding: 28px; transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s; position: relative; overflow: hidden; }
+  .skill-card::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(0,229,255,0.04), transparent); opacity: 0; transition: opacity 0.3s; }
+  .skill-card:hover { border-color: rgba(0,229,255,0.4); box-shadow: var(--glow); transform: translateY(-4px); }
+  .skill-card:hover::before { opacity: 1; }
+  .skill-icon { font-size: 1.8rem; margin-bottom: 16px; }
+  .skill-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; margin-bottom: 8px; }
+  .skill-desc { font-size: 0.72rem; color: var(--muted); line-height: 1.7; margin-bottom: 20px; }
+  .skill-bar-wrap { display: flex; flex-direction: column; gap: 10px; }
+  .skill-bar-item { display: flex; align-items: center; gap: 12px; }
+  .skill-bar-label { font-size: 0.65rem; color: var(--muted); width: 94px; flex-shrink: 0; letter-spacing: 0.03em; }
+  .skill-bar-track { flex: 1; height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; }
+  .skill-bar-fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--cyan), var(--green)); transform: scaleX(0); transform-origin: left; transition: transform 1s cubic-bezier(0.4,0,0.2,1); }
+  .skill-bar-fill.amber { background: linear-gradient(90deg, var(--amber), #f97316); }
+  .skill-bar-fill.green { background: linear-gradient(90deg, var(--green), var(--cyan)); }
+  .skill-pct { font-size: 0.6rem; color: var(--cyan); width: 28px; text-align: right; flex-shrink: 0; }
+
+  /* PROJECTS */
+  .projects-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; }
+  .project-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s; }
+  .project-card:hover { border-color: rgba(0,229,255,0.4); transform: translateY(-6px); box-shadow: 0 20px 60px rgba(0,0,0,0.5), var(--glow); }
+  .project-header { padding: 24px 24px 16px; background: linear-gradient(135deg, rgba(0,229,255,0.06), transparent); border-bottom: 1px solid var(--border); position: relative; min-height: 72px; display: flex; align-items: flex-start; justify-content: space-between; }
+  .project-num { font-family: 'Syne', sans-serif; font-size: 2.5rem; font-weight: 800; color: rgba(0,229,255,0.1); line-height: 1; position: absolute; top: 16px; right: 20px; }
+  .project-type { font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--amber); background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.2); padding: 3px 10px; border-radius: 2px; }
+  .project-body { padding: 20px 24px 24px; }
+  .project-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.05rem; margin-bottom: 10px; color: var(--text); }
+  .project-desc { font-size: 0.75rem; color: var(--muted); line-height: 1.85; margin-bottom: 16px; }
+  .project-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
+  .project-tag { font-size: 0.62rem; color: var(--muted); background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); padding: 3px 8px; border-radius: 2px; letter-spacing: 0.06em; }
+  .project-link { font-size: 0.68rem; color: var(--cyan); text-decoration: none; letter-spacing: 0.1em; text-transform: uppercase; display: inline-flex; align-items: center; gap: 6px; transition: gap 0.2s; }
+  .project-link:hover { gap: 10px; }
+
+  /* TIMELINE */
+  .timeline { position: relative; padding-left: 32px; }
+  .timeline::before { content: ''; position: absolute; left: 8px; top: 0; bottom: 0; width: 1px; background: linear-gradient(to bottom, var(--cyan), transparent); }
+  .timeline-item { position: relative; margin-bottom: 48px; }
+  .timeline-dot { position: absolute; left: -28px; top: 6px; width: 10px; height: 10px; border-radius: 50%; background: var(--bg); border: 2px solid var(--cyan); box-shadow: 0 0 12px var(--cyan); }
+  .timeline-period { font-size: 0.65rem; color: var(--cyan); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 6px; }
+  .timeline-role { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.05rem; margin-bottom: 4px; }
+  .timeline-company { font-size: 0.78rem; color: var(--amber); margin-bottom: 12px; }
+  .timeline-desc { font-size: 0.75rem; color: var(--muted); line-height: 1.85; }
+  .timeline-desc li { margin-bottom: 6px; list-style: none; padding-left: 14px; position: relative; }
+  .timeline-desc li::before { content: '›'; position: absolute; left: 0; color: var(--cyan); }
+  .timeline-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .timeline-tag { font-size: 0.6rem; color: var(--muted); background: rgba(255,255,255,0.04); padding: 2px 8px; border-radius: 2px; border: 1px solid rgba(255,255,255,0.06); }
+
+  /* EXP+CONTACT */
+  .exp-contact-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 80px; }
+  .contact-box { background: rgba(6,15,30,0.8); border: 1px solid var(--border); border-radius: 8px; padding: 32px; position: sticky; top: 100px; }
+  .contact-box h3 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.4rem; margin-bottom: 12px; }
+  .contact-box p { font-size: 0.75rem; color: var(--muted); line-height: 1.8; margin-bottom: 28px; }
+  .contact-link { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--border); text-decoration: none; color: var(--text); font-size: 0.75rem; transition: color 0.2s; }
+  .contact-link:hover { color: var(--cyan); }
+  .contact-link-icon { width: 36px; height: 36px; border-radius: 6px; background: rgba(0,229,255,0.08); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+  .contact-link-label { font-size: 0.62rem; color: var(--muted); display: block; }
+  .contact-link-val { font-size: 0.78rem; }
+
+  /* EDU */
+  .edu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  .edu-card { background: rgba(6,15,30,0.8); border: 1px solid var(--border); border-radius: 8px; padding: 20px; transition: border-color 0.3s, transform 0.3s; }
+  .edu-card:hover { border-color: rgba(0,229,255,0.35); transform: translateY(-3px); }
+  .edu-degree { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.92rem; margin-bottom: 6px; }
+  .edu-school { font-size: 0.72rem; color: var(--amber); margin-bottom: 4px; }
+  .edu-year { font-size: 0.62rem; color: var(--muted); }
+
+  footer { border-top: 1px solid var(--border); padding: 32px 48px; display: flex; justify-content: space-between; align-items: center; font-size: 0.65rem; color: var(--muted); position: relative; z-index: 1; }
+  footer span { color: var(--cyan); }
+
+  body::after { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 200; opacity: 0.025; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E"); background-size: 128px; }
+
+  @media (max-width: 768px) {
+    nav { padding: 16px 24px; } .nav-links { display: none; }
+    #hero, .section-wrap, .pipeline-wrap { padding-left: 24px; padding-right: 24px; }
+    #about .about-grid, .exp-contact-grid { grid-template-columns: 1fr; gap: 40px; }
+    .hero-stats { gap: 24px; }
+    footer { flex-direction: column; gap: 8px; text-align: center; }
+  }
+
+  .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.7s ease, transform 0.7s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .reveal-delay-1 { transition-delay: 0.1s; }
+  .reveal-delay-2 { transition-delay: 0.2s; }
+  .reveal-delay-3 { transition-delay: 0.3s; }
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+<canvas id="canvas3d"></canvas>
+
+<nav>
+  <a href="#hero" class="nav-logo">UJ<span>.</span></a>
+  <ul class="nav-links">
+    <li><a href="#about">About</a></li>
+    <li><a href="#skills">Skills</a></li>
+    <li><a href="#projects">Projects</a></li>
+    <li><a href="#experience">Experience</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+  <div class="nav-badge">Open to Opportunities</div>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-tag">Senior Data Analyst · Tableau · Python · ETL · SQL · SNOWFLAKE</div>
+  <h1>
+    Unnat<br>
+    <span class="accent">Jain</span>
+    <span class="line2">Senior Data Analyst.</span>
+  </h1>
+  <p class="hero-sub">
+    6+ years of making data meaningful. I design <span>interactive Tableau dashboards, build
+    ETL pipelines, and architect frameworks</span> that ensure every number a
+    stakeholder sees is one they can trust.
+  </p>
+  <div class="hero-cta">
+    <a href="#projects" class="btn-primary">View Projects →</a>
+    <a href="#contact" class="btn-secondary">Get In Touch</a>
+  </div>
+  <div class="hero-stats">
+    <div>
+      <div class="stat-num">6+</div>
+      <div class="stat-label">Years Experience</div>
+    </div>
+    <div>
+      <div class="stat-num">3</div>
+      <div class="stat-label">Companies</div>
+    </div>
+    <div>
+      <div class="stat-num">6</div>
+      <div class="stat-label">Live Dashboard</div>
+    </div>
+    <div>
+      <div class="stat-num">4+</div>
+      <div class="stat-label">Certifications</div>
+    </div>
+  </div>
+  <div class="scroll-hint">
+    <span class="scroll-line"></span>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="section-wrap">
+    <div class="section-label">01 — Who I Am</div>
+    <h2 class="section-title">Data clarity,<br>delivered with confidence.</h2>
+    <div class="about-grid">
+      <div class="about-text reveal">
+        <p>I'm a <strong>Senior Data Analyst</strong> with 6+ years of experience across enterprise tech, pharma, and healthcare. I translate complex business requirements into <strong>actionable Tableau dashboards</strong> and build the ETL pipelines that power them — from SFTP to S3, SharePoint to Snowflake.</p>
+        <p>At Infosys, ZS Associates, and Innovaccer, I've designed data quality frameworks, automated ingestion workflows, built reusable Python libraries, and mentored junior analysts — all while delivering under tight, <strong>Agile timelines</strong>.</p>
+        <div class="highlight">
+          "An energetic presenter and confident communicator — I circulate data insights in a way that is clear and efficient for every end-user."
+        </div>
+        <p>I excel at working with <strong>larger, complex datasets</strong>, and I bring a strong sense of data availability decision-making to every problem I solve.</p>
+
+        <div class="cert-section-title">Certifications</div>
+        <div class="cert-row">
+          <div class="cert-item">
+            <span class="cert-icon">🏅</span>
+            <div>
+              <div class="cert-name">Certified Kanban Practitioner</div>
+              <div class="cert-org">Infosys · Operations Management</div>
+            </div>
+          </div>
+          <div class="cert-item">
+            <span class="cert-icon">📊</span>
+            <div>
+              <div class="cert-name">Certified Tableau Developer</div>
+              <div class="cert-org">Infosys</div>
+            </div>
+          </div>
+          <div class="cert-item">
+            <span class="cert-icon">🗄️</span>
+            <div>
+              <div class="cert-name">SQL for Data Analytics & Business Intelligence</div>
+              <div class="cert-org">Udemy · HackerRank SQL Certificate</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tech-stack reveal reveal-delay-2">
+        <h3>Visualisation</h3>
+        <div class="tech-pill-row">
+          <span class="tech-pill">Tableau</span>
+         <!-- <span class="tech-pill">Tableau Server</span> -->
+          <span class="tech-pill">Tableau Public</span>
+        </div>
+        <h3>Languages</h3>
+        <div class="tech-pill-row">
+          <span class="tech-pill amber">Python</span>
+          <span class="tech-pill amber">SQL</span>
+        </div>
+        <h3>Platforms</h3>
+        <div class="tech-pill-row">
+          <span class="tech-pill green">Snowflake</span>
+          <span class="tech-pill green">Dataiku</span>
+		  <span class="tech-pill">Excel</span>
+        </div>
+        <h3>Methodology</h3>
+        <div class="tech-pill-row">
+          <span class="tech-pill amber">Agile</span>
+          <span class="tech-pill amber">Data Quality</span>
+          <span class="tech-pill amber">Multiprocessing</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PIPELINE DIAGRAM -->
+<section id="pipeline">
+  <div class="pipeline-wrap">
+    <div class="section-label">Analytics Architecture</div>
+    <h2 style="font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(1.5rem,3vw,2.2rem);letter-spacing:-0.02em;">
+      From raw source to<br>boardroom-ready insight.
+    </h2>
+    <div class="pipeline-flow">
+      <div class="pipeline-step">
+        <div class="pipeline-icon">📡</div>
+        <div class="pipeline-name">Source</div>
+        <div class="pipeline-sublabel">SFTP · SharePoint · Excel</div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-icon">🐍</div>
+        <div class="pipeline-name">Extract</div>
+        <div class="pipeline-sublabel">Python · Dataiku</div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-icon">🏗️</div>
+        <div class="pipeline-name">Transform</div>
+        <div class="pipeline-sublabel">Snowflake SQL</div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-icon">🗄️</div>
+        <div class="pipeline-name">Load</div>
+        <div class="pipeline-sublabel">Snowflake · AWS S3</div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-icon">✅</div>
+        <div class="pipeline-name">Validate</div>
+        <div class="pipeline-sublabel">Clean Data Layer</div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-icon">📊</div>
+        <div class="pipeline-name">Visualise</div>
+        <div class="pipeline-sublabel">Tableau </div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-icon">🎯</div>
+        <div class="pipeline-name">Insight</div>
+        <div class="pipeline-sublabel">KPIs · Stakeholders</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SKILLS -->
+<section id="skills">
+  <div class="section-wrap">
+    <div class="section-label">02 — Capabilities</div>
+    <h2 class="section-title">Deep expertise where<br>data meets decisions.</h2>
+    <div class="skills-grid">
+
+      <div class="skill-card reveal">
+        <div class="skill-icon">📊</div>
+        <div class="skill-name">Tableau & BI Dashboarding</div>
+        <div class="skill-desc">Building interactive, dynamic dashboards with LODs, action filters, parameters, and calculated fields — translating business needs into visual KPIs stakeholders actually use.</div>
+        <div class="skill-bar-wrap">
+          <div class="skill-bar-item">
+            <span class="skill-bar-label">Tableau Desktop</span>
+            <div class="skill-bar-track"><div class="skill-bar-fill" style="--w:0.95"></div></div>
+            <span class="skill-pct">95%</span>
+          </div>
+          <div class="skill-bar-item">
+            <span class="skill-bar-label">Tableau Server</span>
+            <div class="skill-bar-track"><div class="skill-bar-fill" style="--w:0.90"></div></div>
+            <span class="skill-pct">90%</span>
+          </div>
+          <div class="skill-bar-item">
+            <span class="skill-bar-label">LODs & Calcs</span>
+            <div class="skill-bar-track"><div class="skill-bar-fill" style="--w:0.92"></div></div>
+            <span class="skill-pct">92%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="skill-card reveal reveal-delay-1">
+        <div class="skill-icon">🐍</div>
+        <div class="skill-name">Python & ETL Engineering</div>
+        <div class="skill-desc">Writing production Python scripts for data ingestion (SFTP→S3, SharePoint→S3), ETL workflows, multiprocessing optimisation, and reusable platform libraries.</div>
+        <div class="skill-bar-wrap">
+          <div class="skill-bar-item">
+            <span class="skill-bar-label">Python</span>
+            <div class="skill-bar-track"><div class="skill-bar-fill amber" style="--w:0.88"></div></div>
+            <span class="skill-pct">80%</span>
+          </div>
+          <div class="skill-bar-item">
+            <span class="skill-bar-label">ETL Design</span>
+            <div class="skill-bar-track"><div class="skill-bar-fill amber" style="--w:0.85"></div></div>
+            <span class="skill-pct">85%</span>
+          </div>
+          <div class="skill-bar-item">
+            <span class="skill-bar-label">Dataiku</span>
+            <div class="skill-bar-track"><div class="skill-bar-fill amber" style="--w:0.80"></div></div>
+            <span class="skill-pct">80%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="skill-card reveal reveal-delay-2">
+        <div class="skill-icon">🗄️</div>
+        <div class="skill-name">SQL & Data Warehousing</div>
+        <div class="skill-desc">Complex query writing, Snowflake SQL for pipeline logic, financial data reconciliation, and optimising analytical workloads across large-scale enterprise datasets.</div>
+        <div class="skill-bar-wrap">
+          <div class="skill-bar-item">
+            <span class="skill-bar-label">SQL (Advanced)</span>
+            <div class="skill-bar-track"><div class="skill-bar-fill green" style="--w:0.93"></div></div>
+            <span class="skill-pct">95%</span>
+          </div>
+          <div class="skill-bar-item">
+            <span class="skill-bar-label">Snowflake</span>
+            <div class="skill-bar-track"><div class="skill-bar-fill green" style="--w:0.82"></div></div>
+            <span class="skill-pct">82%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="skill-card reveal reveal-delay-3">
+        <div class="skill-icon">✅</div>
+        <div class="skill-name">Data Quality & Frameworks</div>
+        <div class="skill-desc">Architecting QC frameworks (Clean Data Layer) that validate every dataset before it reaches a dashboard. Error-handling pipelines, pipeline monitoring, and failure alerting baked in.</div>
+        <div class="skill-bar-wrap">
+          <div class="skill-bar-item">
+            <span class="skill-bar-label">Data Validation</span>
+            <div class="skill-bar-track"><div class="skill-bar-fill" style="--w:1"></div></div>
+            <span class="skill-pct">100%</span>
+          </div>
+          <div class="skill-bar-item">
+            <span class="skill-bar-label">Error Handling</span>
+            <div class="skill-bar-track"><div class="skill-bar-fill" style="--w:1"></div></div>
+            <span class="skill-pct">100%</span>
+          </div>
+          <div class="skill-bar-item">
+            <span class="skill-bar-label">Pipeline Monitor</span>
+            <div class="skill-bar-track"><div class="skill-bar-fill" style="--w:1"></div></div>
+            <span class="skill-pct">100%</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- PROJECTS -->
+<section id="projects">
+  <div class="section-wrap">
+    <div class="section-label">03 — Projects</div>
+    <h2 class="section-title">Things I've built<br>that answer real questions.</h2>
+    <div class="projects-grid">
+
+      <div class="project-card reveal">
+        <div class="project-header">
+          <span class="project-type">Tableau · Incident BI</span>
+          <div class="project-num">01</div>
+        </div>
+        <div class="project-body">
+          <div class="project-title">Help-Desk Tableau Dashboard</div>
+          <div class="project-desc">An incident team report generator dashboard built end-to-end in Tableau. Live data fed from an Excel worksheet gives support teams an instant view of open tickets, resolution trends, and team performance. Published on Tableau Public Server.</div>
+          <div class="project-tags">
+            <span class="project-tag">Tableau</span>
+            <span class="project-tag">Excel</span>
+            <span class="project-tag">Tableau Public</span>
+            <span class="project-tag">Action Filters</span>
+          </div>
+          <a href="https://public.tableau.com/app/profile/unnat3891/viz/online_retail_16208927919020/Dashboard1" target="_blank" class="project-link">View on Tableau Public →</a>
+        </div>
+      </div>
+
+      <div class="project-card reveal reveal-delay-1">
+        <div class="project-header">
+          <span class="project-type">SQL · Tableau · Global Challenge</span>
+          <div class="project-num">02</div>
+        </div>
+        <div class="project-body">
+          <div class="project-title">TEDx Talks Analytics Dashboard</div>
+          <div class="project-desc">Built as part of a global data challenge — an in-depth Tableau dashboard surfacing hidden insights from TEDx talks data: speaker trends, topic clusters, view and engagement metrics. SQL-powered data prep layer underpins the whole thing.</div>
+          <div class="project-tags">
+            <span class="project-tag">Tableau</span>
+            <span class="project-tag">SQL</span>
+            <span class="project-tag">LODs</span>
+            <span class="project-tag">Data Challenge</span>
+          </div>
+          <a href="https://public.tableau.com/app/profile/unnat3891/viz/TedxTalks_16482137804980/Dashboard1" target="_blank" class="project-link">View on Tableau Public →</a>
+        </div>
+      </div>
+
+      <div class="project-card reveal reveal-delay-2">
+        <div class="project-header">
+          <span class="project-type">SQL · Tableau · Space Data</span>
+          <div class="project-num">03</div>
+        </div>
+        <div class="project-body">
+          <div class="project-title">Space Mission Dashboard (1957–2022)</div>
+          <div class="project-desc">Global data challenge entry — a comprehensive Tableau dashboard covering every space mission launched from 1957 to 2022. Answers all challenge questions and surfaces original insights: Cold War era breakdowns, agency comparisons, country-wise launch trends, and success rate analysis.</div>
+          <div class="project-tags">
+            <span class="project-tag">Tableau</span>
+            <span class="project-tag">SQL</span>
+            <span class="project-tag">Data Analysis</span>
+            <span class="project-tag">Data Challenge</span>
+          </div>
+          <a href="https://public.tableau.com/app/profile/unnat3891/viz/AnalysisonSpaceMissions/Dashboard1" target="_blank" class="project-link">View on Tableau Public →</a>
+        </div>
+      </div>
+	  
+	  <div class="project-card reveal reveal-delay-2">
+        <div class="project-header">
+          <span class="project-type">Excel · Tableau · COVID-19</span>
+          <div class="project-num">04</div>
+        </div>
+        <div class="project-body">
+          <div class="project-title">COVID-19 Global Dashboard</div>
+          <div class="project-desc">This project involves building an interactive Tableau dashboard to analyze and visualize the global spread of COVID-19. The dashboard presents key metrics such as total confirmed cases and deaths, along with geographical distribution using a world map.</div>
+          <div class="project-tags">
+            <span class="project-tag">Tableau</span>
+            <span class="project-tag">SQL</span>
+            <span class="project-tag">Data Analysis</span>
+          </div>
+          <a href="https://public.tableau.com/app/profile/unnat3891/viz/Covid19in-progress/Dashboard1" target="_blank" class="project-link">View on Tableau Public →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EXPERIENCE + CONTACT -->
+<section id="experience">
+  <div class="section-wrap">
+    <div class="exp-contact-grid">
+      <div>
+        <div class="section-label">04 — Experience</div>
+        <h2 style="font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(1.8rem,3vw,2.4rem);letter-spacing:-0.02em;margin-bottom:48px;">Where I've<br>made an impact.</h2>
+        <div class="timeline">
+
+          <div class="timeline-item reveal">
+            <div class="timeline-dot"></div>
+            <div class="timeline-period">Jan 2024 — Present</div>
+            <div class="timeline-role">Senior Data Analyst</div>
+            <div class="timeline-company">Innovaccer</div>
+            <ul class="timeline-desc">
+              <li>Designed interactive Tableau dashboards visualising complex healthcare KPIs, enabling stakeholders to identify trends instantly.</li>
+              <li>Built Python scripts to load data from SFTP to S3 using multiprocessing — significantly reducing execution time.</li>
+              <li>Designed and built ETL workflows in Python and SQL pulling from client systems to internal standards.</li>
+              <li>Implemented data validation and error-handling mechanisms that reduced dashboard inaccuracies.</li>
+              <li>Mentored junior analysts in organisational best practices and delivery standards.</li>
+            </ul>
+            <div class="timeline-tags">
+              <span class="timeline-tag">Tableau</span>
+              <span class="timeline-tag">Python</span>
+			  <span class="timeline-tag">Excel</span>
+              <span class="timeline-tag">SQL</span>
+              <span class="timeline-tag">Pandas</span>
+              <span class="timeline-tag">Etl</span>
+            </div>
+          </div>
+
+          <div class="timeline-item reveal reveal-delay-1">
+            <div class="timeline-dot"></div>
+            <div class="timeline-period">Oct 2021 — Jan 2024</div>
+            <div class="timeline-role">Data Analyst</div>
+            <div class="timeline-company">ZS Associates</div>
+            <ul class="timeline-desc">
+              <li>Translated pharma client requirements into Tableau dashboards using advanced LODs, parameters, and chart types.</li>
+              <li>Built ETL pipelines on Dataiku using Python and Snowflake SQL, automating client data ingestion end-to-end.</li>
+              <li>Coded Python scripts loading data from SharePoint to S3 for a major BI project.</li>
+              <li>Created Python libraries to monitor ELT pipeline states and halt Tableau Hyper exports at defined thresholds.</li>
+              <li>Architected the <strong style="color:var(--cyan)">Clean Data Layer</strong> — a QC framework checking every team dataset with automated failure alerts.</li>
+            </ul>
+            <div class="timeline-tags">
+              <span class="timeline-tag">Tableau</span>
+              <span class="timeline-tag">Dataiku</span>
+              <span class="timeline-tag">Python</span>
+              <span class="timeline-tag">Snowflake SQL</span>
+			  <span class="timeline-tag">Etl</span>
+			  <span class="timeline-tag">Excel</span>
+            </div>
+          </div>
+
+          <div class="timeline-item reveal reveal-delay-2">
+            <div class="timeline-dot"></div>
+            <div class="timeline-period">Feb 2019 — Oct 2021</div>
+            <div class="timeline-role">Data Analyst</div>
+            <div class="timeline-company">Infosys</div>
+            <ul class="timeline-desc">
+              <li>Published interactive dashboards to Tableau Server for client-facing reporting deliverables.</li>
+              <li>Proposed solutions to support teams, achieving a <strong style="color:var(--cyan)">60% reduction in tickets</strong> and eliminating significant manual work.</li>
+              <li>Automated Tableau deployments using the RLM tool, improving release consistency and speed.</li>
+              <li>Designed and maintained templated visualisations used across multiple client engagements.</li>
+            </ul>
+            <div class="timeline-tags">
+              <span class="timeline-tag">Tableau Server</span>
+              <span class="timeline-tag">RLM</span>
+              <span class="timeline-tag">SQL</span>
+              <span class="timeline-tag">Excel</span>
+              <span class="timeline-tag">Data Analysis</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- EDUCATION -->
+        <div style="margin-top:64px;">
+          <div class="section-label" style="margin-bottom:24px;">Education</div>
+          <div class="edu-grid">
+            <div class="edu-card reveal">
+              <div class="edu-degree">B.tech in Computer Engineering</div>
+              <div class="edu-school">The Northcap University, Gurugram</div>
+              <div class="edu-year">July 2018</div>
+            </div>
+            <div class="edu-card reveal reveal-delay-1">
+              <div class="edu-degree">12th — CBSE</div>
+              <div class="edu-school">N.C. Jindal Public School, New Delhi</div>
+              <div class="edu-year">March 2014</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTACT -->
+      <div id="contact">
+        <div class="section-label">05 — Contact</div>
+        <h2 style="font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(1.8rem,3vw,2.4rem);letter-spacing:-0.02em;margin-bottom:32px;">Let's talk<br>data.</h2>
+        <div class="contact-box reveal">
+          <h3>Open to Opportunities</h3>
+          <p>Looking for Data Analyst,BI or Data Engineering roles. Happy to discuss full-time positions, freelance dashboarding, or just talk data architecture over chai.</p>
+          <a href="mailto:unnat.1995@gmail.com" class="contact-link">
+            <div class="contact-link-icon">✉️</div>
+            <div>
+              <span class="contact-link-label">Email</span>
+              <span class="contact-link-val">unnat.1995@gmail.com</span>
+            </div>
+          </a>
+          <a href="tel:+919899563148" class="contact-link">
+            <div class="contact-link-icon">📞</div>
+            <div>
+              <span class="contact-link-label">Phone</span>
+              <span class="contact-link-val">+91 98995 63148</span>
+            </div>
+          </a>
+          <a href="https://public.tableau.com/app/profile/unnat3891/" target="_blank" class="contact-link">
+            <div class="contact-link-icon">📊</div>
+            <div>
+              <span class="contact-link-label">Tableau Public</span>
+              <span class="contact-link-val">View my dashboards</span>
+            </div>
+          </a>
+          <a href="https://linkedin.com/in/unnatjain" target="_blank" class="contact-link">
+            <div class="contact-link-icon">💼</div>
+            <div>
+              <span class="contact-link-label">LinkedIn</span>
+              <span class="contact-link-val">linkedin.com/in/unnatjain</span>
+            </div>
+          </a>
+          <a href="https://raw.githubusercontent.com/9899/Portfolio/e019e31f0f5ea8f7defdf46dcfa245028dd55c07/Unnat%20Jain(Resume).pdf" class="btn-primary" style="display:block;text-align:center;margin-top:24px;">Download Resume ↓</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div>© 2026 <span>Unnat Jain</span> — Senior Data Analyst · Delhi, India</div>
+  <div>Built with Three.js · HTML · CSS</div>
+</footer>
+
+<script>
+// CURSOR
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursor-ring');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
+function animCursor(){
+  cursor.style.left=mx+'px';cursor.style.top=my+'px';
+  rx+=(mx-rx)*0.12;ry+=(my-ry)*0.12;
+  ring.style.left=rx+'px';ring.style.top=ry+'px';
+  requestAnimationFrame(animCursor);
+}
+animCursor();
+
+// THREE.JS
+const canvas=document.getElementById('canvas3d');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.setSize(window.innerWidth,window.innerHeight);
+renderer.setClearColor(0x000000,0);
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(60,window.innerWidth/window.innerHeight,0.1,2000);
+camera.position.set(0,0,120);
+
+const N=800;
+const pos=new Float32Array(N*3);
+const vel=[];
+for(let i=0;i<N;i++){
+  pos[i*3]=(Math.random()-.5)*300;
+  pos[i*3+1]=(Math.random()-.5)*200;
+  pos[i*3+2]=(Math.random()-.5)*200;
+  vel.push({x:(Math.random()-.5)*.08,y:(Math.random()-.5)*.05,z:(Math.random()-.5)*.04});
+}
+const geo=new THREE.BufferGeometry();
+geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+const particles=new THREE.Points(geo,new THREE.PointsMaterial({color:0x00e5ff,size:0.8,transparent:true,opacity:0.6,sizeAttenuation:true,blending:THREE.AdditiveBlending,depthWrite:false}));
+scene.add(particles);
+
+const lineGeo=new THREE.BufferGeometry();
+const lines=new THREE.LineSegments(lineGeo,new THREE.LineBasicMaterial({color:0x00e5ff,transparent:true,opacity:0.06,blending:THREE.AdditiveBlending,depthWrite:false}));
+scene.add(lines);
+
+function mkHex(r,col,op){
+  const sh=new THREE.Shape();
+  for(let i=0;i<6;i++){const a=(i/6)*Math.PI*2;i===0?sh.moveTo(Math.cos(a)*r,Math.sin(a)*r):sh.lineTo(Math.cos(a)*r,Math.sin(a)*r);}
+  sh.closePath();
+  return new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(sh.getPoints(6)),new THREE.LineBasicMaterial({color:col,transparent:true,opacity:op,blending:THREE.AdditiveBlending,depthWrite:false}));
+}
+const hexes=[];
+for(let i=0;i<12;i++){
+  const h=mkHex(Math.random()*8+4,i%2===0?0x00e5ff:0xf59e0b,Math.random()*.12+.04);
+  h.position.set((Math.random()-.5)*250,(Math.random()-.5)*160,(Math.random()-.5)*80);
+  h.rotation.z=Math.random()*Math.PI;
+  h.userData={rs:(Math.random()-.5)*.003,fs:Math.random()*.002+.001,ph:Math.random()*Math.PI*2};
+  scene.add(h);hexes.push(h);
+}
+
+let tx=0,ty=0,cx=0,cy=0,t=0,fc=0;
+document.addEventListener('mousemove',e=>{tx=(e.clientX/window.innerWidth-.5)*2;ty=-(e.clientY/window.innerHeight-.5)*2;});
+
+function updateLines(){
+  const arr=new Float32Array(30000);
+  let c=0;
+  for(let i=0;i<N&&c<4000;i++){
+    for(let j=i+1;j<N&&c<4000;j++){
+      const dx=pos[i*3]-pos[j*3],dy=pos[i*3+1]-pos[j*3+1],dz=pos[i*3+2]-pos[j*3+2];
+      if(Math.sqrt(dx*dx+dy*dy+dz*dz)<40){
+        arr[c*6]=pos[i*3];arr[c*6+1]=pos[i*3+1];arr[c*6+2]=pos[i*3+2];
+        arr[c*6+3]=pos[j*3];arr[c*6+4]=pos[j*3+1];arr[c*6+5]=pos[j*3+2];c++;
+      }
+    }
+  }
+  lineGeo.setAttribute('position',new THREE.BufferAttribute(arr.slice(0,c*6),3));
+  lines.geometry.attributes.position.needsUpdate=true;
+}
+
+function animate(){
+  requestAnimationFrame(animate);t+=.005;fc++;
+  for(let i=0;i<N;i++){
+    pos[i*3]+=vel[i].x;pos[i*3+1]+=vel[i].y;pos[i*3+2]+=vel[i].z;
+    if(Math.abs(pos[i*3])>150)vel[i].x*=-1;
+    if(Math.abs(pos[i*3+1])>100)vel[i].y*=-1;
+    if(Math.abs(pos[i*3+2])>100)vel[i].z*=-1;
+  }
+  geo.attributes.position.needsUpdate=true;
+  if(fc%8===0)updateLines();
+  hexes.forEach(h=>{h.rotation.z+=h.userData.rs;h.position.y+=Math.sin(t*h.userData.fs*100+h.userData.ph)*.03;});
+  cx+=(tx*8-cx)*.02;cy+=(ty*5-cy)*.02;
+  camera.position.x=cx;camera.position.y=cy;camera.lookAt(0,0,0);
+  particles.rotation.y=t*.02;
+  renderer.render(scene,camera);
+}
+animate();
+
+window.addEventListener('resize',()=>{
+  camera.aspect=window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth,window.innerHeight);
+});
+
+// SKILL BARS
+function animateBars(){
+  document.querySelectorAll('.skill-bar-fill').forEach(el=>{
+    el.style.transform=`scaleX(${el.style.getPropertyValue('--w')||'0.8'})`;
+  });
+}
+
+// INTERSECTION OBSERVER
+const io=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      e.target.classList.add('visible');
+      if(e.target.closest('#skills'))setTimeout(animateBars,200);
+    }
+  });
+},{threshold:0.12});
+document.querySelectorAll('.reveal,.skill-card').forEach(el=>io.observe(el));
+</script>
+</body>
+</html>
